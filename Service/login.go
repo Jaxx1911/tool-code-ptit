@@ -1,13 +1,13 @@
 package Service
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 )
 
 type Account struct {
@@ -16,10 +16,13 @@ type Account struct {
 	Token    string `json:"_token"`
 }
 
-var host = "https://code.ptit.edu.vn/login"
+var apiURL = "https://code.ptit.edu.vn"
+var userAgent = "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Mobile Safari/537.36"
 
-func GetAccount() (Account, error) {
-	var acc Account
+func GetAccount(token string) (Account, error) {
+	acc := Account{
+		Token: strings.ReplaceAll(token, " ", ""),
+	}
 	content, err := ioutil.ReadFile("./Data/account.txt")
 	if err != nil {
 		return acc, err
@@ -28,76 +31,57 @@ func GetAccount() (Account, error) {
 	if er != nil {
 		return acc, er
 	}
+	fmt.Println(acc)
 	return acc, nil
+
 }
 
-func GetCookieAndToken() ([](*http.Cookie), string, error) {
+func GetCodePtitCookie() (string, string, error) {
 	client := &http.Client{}
 
-	// Tạo một yêu cầu GET
-	req, err := http.NewRequest("GET", "https://code.ptit.edu.vn/login", nil)
+	req, err := http.NewRequest("GET", apiURL+"/login", nil)
 	if err != nil {
-		return nil, "", err
+		return "", "", err
+	}
+	req.Header.Set("User-Agent", userAgent)
+	res, err := client.Do(req)
+	if err != nil {
+		return "", "", err
+	}
+	defer res.Body.Close()
+
+	var csrf_set_cookie string
+	if len(res.Header["Set-Cookie"]) > 1 {
+		csrf_set_cookie = res.Header["Set-Cookie"][1]
+	} else {
+		csrf_set_cookie = ""
 	}
 
-	// Gửi yêu cầu
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println("Error making request:", err)
-		return nil, "", err
-	}
-	defer resp.Body.Close()
-
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
 	tokenValue := doc.Find("input[name='_token']").AttrOr("value", "")
-
-	// Lấy cookie từ phản hồi
-	cookies := resp.Cookies()
-
-	return cookies, tokenValue, nil
-}
-
-func LoginService() error {
-	client := &http.Client{}
-	account, err := GetAccount()
+	account, err := GetAccount(tokenValue)
 	if err != nil {
-		return err
+		return "", "", err
 	}
-	cookie, tk, err := GetCookieAndToken()
+
+	loginReq, err := http.NewRequest("POST", apiURL+"/login", strings.NewReader(fmt.Sprintf("_token=%s&username=%s&password=%s", account.Token, account.Username, account.Password)))
 	if err != nil {
-		return err
+		return "", "", err
 	}
-	account.Token = tk
+	loginReq.Header.Set("User-Agent", userAgent)
+	loginReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	loginReq.Header.Set("Cookie", csrf_set_cookie)
 
-	body, err := json.Marshal(account)
+	loginRes, err := client.Do(loginReq)
 	if err != nil {
-		return err
+		return "", "", err
 	}
-
-	res, err := http.NewRequest("POST", host, bytes.NewBuffer(body))
-	if err != nil {
-		return err
-	}
-
-	res.Header.Set("User-Agent", "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Mobile Safari/537.36")
-
-	for _, ck := range cookie {
-		res.AddCookie(ck)
-	}
-	resp, err := client.Do(res)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	respBod, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(string(respBod))
-	return nil
+	defer loginRes.Body.Close()
+	cookie := loginRes.Header["Set-Cookie"][1]
+	fmt.Println("Cookie cuoi: " + cookie)
+	fmt.Println("CSRF:" + csrf_set_cookie)
+	return cookie, csrf_set_cookie, nil
 }
