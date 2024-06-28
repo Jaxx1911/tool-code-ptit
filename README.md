@@ -24,5 +24,5 @@ Move your source code into SoureCode folder
 Auto submit
 
 ```bash
-  go run
+  go run main.go
 ```
