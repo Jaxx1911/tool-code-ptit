@@ -8,13 +8,6 @@ Clone the project
   git clone https://github.com/Jaxx1911/tool-code-ptit.git
 ```
 
-Go to the project directory
-
-```bash
-  cd tool-code-ptit
-```
-
-
 Import your account into account.txt in Data folder
 
 ```bash
