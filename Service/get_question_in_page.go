@@ -3,22 +3,23 @@ package Service
 import (
 	"github.com/PuerkitoBio/goquery"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
 type ProblemInfo struct {
-	problemName   string
-	problemLink   string
-	problemId     string
-	problemStatus string
-	problemTopic  string
-	problemLevel  string
+	ProblemName   string
+	ProblemLink   string
+	ProblemId     string
+	ProblemStatus string
+	ProblemTopic  string
+	ProblemLevel  string
 }
 
 func GetQuestionInPage(cookie string, page int) ([]ProblemInfo, []ProblemInfo, error) {
 	client := &http.Client{}
 
-	req, err := http.NewRequest("GET", apiURL+"/student/question"+"?page="+string(page), nil)
+	req, err := http.NewRequest("GET", apiURL+"/student/question"+"?page="+strconv.Itoa(page), nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -44,18 +45,18 @@ func GetQuestionInPage(cookie string, page int) ([]ProblemInfo, []ProblemInfo, e
 		problemDifficulty := strings.TrimSpace(s.Find("td:nth-child(7)").Text())
 
 		problemInfo := ProblemInfo{
-			problemName:  problemName,
-			problemLink:  problemLink,
-			problemId:    problemID,
-			problemTopic: problemTopic,
-			problemLevel: problemDifficulty,
+			ProblemName:  problemName,
+			ProblemLink:  problemLink,
+			ProblemId:    problemID,
+			ProblemTopic: problemTopic,
+			ProblemLevel: problemDifficulty,
 		}
 
 		if s.HasClass("bg--10th") {
-			problemInfo.problemStatus = "Complete"
+			problemInfo.ProblemStatus = "Complete"
 			completeQuestionList = append(completeQuestionList, problemInfo)
 		} else {
-			problemInfo.problemStatus = "Incomplete"
+			problemInfo.ProblemStatus = "Incomplete"
 			incompleteQuestionList = append(incompleteQuestionList, problemInfo)
 		}
 	})
