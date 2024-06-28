@@ -1,6 +1,6 @@
 # tool-code-ptit
 
-## Run Locally
+## How to use
 
 Clone the project
 
@@ -25,6 +25,12 @@ Import your account into account.txt
 ```bash
   "username": "your-username"
   "password": "your-password"
+```
+
+Move your source code into SoureCode Folder
+
+```bash
+  ./SourceCode
 ```
 
 Auto submit
