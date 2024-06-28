@@ -14,20 +14,15 @@ Go to the project directory
   cd tool-code-ptit
 ```
 
-Go to account file
 
-```bash
-  cd ./Data/account.txt
-```
-
-Import your account into account.txt
+Import your account into account.txt in Data folder
 
 ```bash
   "username": "your-username"
   "password": "your-password"
 ```
 
-Move your source code into SoureCode Folder
+Move your source code into SoureCode folder
 
 ```bash
   ./SourceCode
